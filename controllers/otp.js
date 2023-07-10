@@ -6,27 +6,54 @@ async function sendOtp(req, res) {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const client = require('twilio')(accountSid, authToken);
 
-    const otp = await generateOTP()
-    client.messages
-        .create({
-            body: `Your OTP for login to BIXI app is ${otp}`,
-            from: process.env.TWILIO_MOBILE,
-            to: req.body.user_msin                              //user mobile number
-        })
-        .then(message => console.log(message.sid))
-        .then(()=>{
-            const newOTP = new OtpStore(
-            {
-                msin : req.body.user_msin,
-                prefix : `+91`,
-                otp_val : otp
+    var now = new Date();
+    const exists = await OtpStore.findOne({
+        msin : req.body.user_msin,
+        prefix : `+91`
+    }).exec()
+    console.log(exists)
+    if(exists && exists.expiry>now){
+        res.status(409).send(`OTP request denied...`)
+    }
+    else{
+
+        const otp = await generateOTP()
+        client.messages
+            .create({
+                body: `Your OTP for login to BIXI app is ${otp}`,
+                from: process.env.TWILIO_MOBILE,
+                to: req.body.user_msin                              //user mobile number
             })
-            newOTP.save()
-        })
-        .then(res.status(201).send(`OTP request successfully created`))
-        .catch((err)=>{
-            console.log(err)
-        });
+            .then(message => console.log(message.sid))
+            .then(async()=>{
+                
+                var exp = new Date();
+                exp.setSeconds(exp.getSeconds()+120)
+                
+                if(exists && exists.expiry<now){
+                    OtpStore.updateOne({_id : exists._id},
+                        {
+                            otp_val : otp,
+                            expiry : exp
+                        });
+                }
+                else if(!exists){
+                    const newOTP = new OtpStore(
+                        {
+                            msin : req.body.user_msin,
+                            prefix : `+91`,
+                            otp_val : otp,
+                            expiry: exp
+                        })
+                    await newOTP.save()
+                }
+            })
+            .then(res.status(201).send(`OTP request successfully created`))
+            .catch((err)=>{
+                console.log(err)
+            });
+    }
+
 }
 /**
  * 
@@ -39,7 +66,7 @@ async function verifyOtp(req,res) {
             msin : req.body.user_msin,
         }).exec()
         console.log(query)
-            if(query!=null && query.otp_val == req.body.otp){
+            if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
                 await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
                 return true;
             }

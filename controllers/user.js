@@ -5,12 +5,20 @@ const getUser = async (req,res)=>{
 }
 const saveUser = async(req,res)=>{
     try{
-        const saveResult = await User.updateOne({...req.body.user_details},{upsert:true});
-        res.status(200).send({
-            matched: saveResult.matchedCount,
-            newUpsert: saveResult.upsertedId,
-            done : saveResult.acknowledged
-        })
+        const findResult = await User.findOne({...req.body.user_details.name}).exec();
+        if(findResult){
+            const saveResult = await User.updateOne({_id : findResult._id},{...req.body.user_details})
+            res.status(200).send({
+                matched: saveResult.matchedCount,
+                newUpsert: saveResult.upsertedId,
+                done : saveResult.acknowledged
+            })
+        }
+        else{
+            const newUser = new User({...req.body.user_details})
+            await newUser.save();
+            res.status(200).send(`user created`)
+        }
     }
     catch(err){
         res.send(`error: ${err}`)

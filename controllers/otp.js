@@ -7,7 +7,7 @@ async function sendOtp(req, res) {
     const client = require('twilio')(accountSid, authToken);
 
     var now = new Date();
-    const exists = await OtpStore.findOne({
+    var exists = await OtpStore.findOne({
         msin : req.body.user_msin,
         prefix : `+91`
     }).exec()
@@ -67,10 +67,15 @@ async function verifyOtp(req,res) {
         console.log(query)
             if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
                 await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
-                return true;
+                req.session.token = 'newToken';
+                // return true;
+                res.status(200).send(`User Verified.`)
             }
-            else 
-                return false
+            else{
+                res.status(401).send(`OTP verification failed. Try again`)
+                // return false
+            } 
+
     }
     catch{
         (err)=>{

@@ -31,11 +31,10 @@ async function sendOtp(req, res) {
                 exp.setSeconds(exp.getSeconds()+120)
                 
                 if(exists && exists.expiry<now){
-                    OtpStore.updateOne({_id : exists._id},
-                        {
-                            otp_val : otp,
-                            expiry : exp
-                        });
+                    exists.otp_val = otp;
+                    exists.expiry = exp;
+                    
+                    await exists.save();
                 }
                 else if(!exists){
                     const newOTP = new OtpStore(

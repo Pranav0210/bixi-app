@@ -16,7 +16,7 @@ const ReceiptSchema = mongoose.Schema({
     fixed_adv : {type:Number, required:true},
     penalty : {type:Number, required:true},
     total_fare : {type:Number, required:true},
-    generated_time : {type:Date}
+    generated_time : {type:Date}                                       
 });
 
 Receipt.pre('save', ()=>{

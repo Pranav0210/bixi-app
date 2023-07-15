@@ -24,6 +24,10 @@ app.use(cors())
 app.use('/api/auth', authRouter)
 app.use(authState)
 app.use('/api/user', userRouter)
+app.use('/api/logout', (req,res)=>{
+  req.session = null;
+  res.status(200).send("Session terminated.")
+})
 app.use('/api/rides', ridesRouter)
 app.use('/api/admin', adminRouter)
 

@@ -5,19 +5,17 @@ const getUser = async (req,res)=>{
 }
 const saveUser = async(req,res)=>{
     try{
-        const findResult = await User.findOne({...req.body.user_details.name}).exec();
+        let findResult = await User.findOne({contact:req.body.query_field.contact}).exec();
+        console.log(findResult)
         if(findResult){
-            const saveResult = await User.updateOne({_id : findResult._id},{...req.body.user_details})
-            res.status(200).send({
-                matched: saveResult.matchedCount,
-                newUpsert: saveResult.upsertedId,
-                done : saveResult.acknowledged
-            })
+            findResult = {... findResult, ...req.body.update_fields}
+            await findResult.save();
+            res.status(204).send(`User updated successfully.`)
         }
         else{
-            const newUser = new User({...req.body.user_details})
+            const newUser = new User({...req.body.update_fields})
             await newUser.save();
-            res.status(200).send(`user created`)
+            res.status(201).send(`user created`)
         }
     }
     catch(err){
@@ -25,11 +23,11 @@ const saveUser = async(req,res)=>{
     }
 }
 const userQuery = async (req,res)=>{
-    const queryResult = await User.find(req.body.query)
+    const queryResult = await User.find(req.body.query_fields)
     res.status(200).send(queryResult);
 }
 const deleteUser = async(req,res)=>{
-    const deletedCount = await User.deleteOne({...req.body.del_query})
+    const deletedCount = await User.deleteOne({...req.body.query_field.contact})
     res.send(`Deleted ${deletedCount} user profile`)
 }
 

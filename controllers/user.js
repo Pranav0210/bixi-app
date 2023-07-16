@@ -1,4 +1,6 @@
 const User = require('../models/model.user')
+const { imgUpload } = require('./aws-controller')
+
 const getUser = async (req,res)=>{
     const user = await User.findOne({...req.body.user_details})
     res.status(200).send(`User Details : ${user}`)
@@ -13,7 +15,12 @@ const saveUser = async(req,res)=>{
             res.status(204).send(`User updated successfully.`)
         }
         else{
-            const newUser = new User({...req.body.update_fields})
+            req.files.forEach(async(img,index) => {
+                const imgPath = img.path
+                const blob = fs.readFileSync(imgPath)
+                imgUrls[index] = await imgUpload(blob) 
+            })
+            const newUser = new User({...req.body.update_fields, img : imgUrls[0], document_img : imgUrls[1]})
             await newUser.save();
             res.status(201).send(`user created`)
         }

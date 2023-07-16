@@ -2,7 +2,8 @@ const User = require('../models/model.user')
 const { imgUpload } = require('./aws-controller')
 
 const getUser = async (req,res)=>{
-    if(!_.isEmpty(req.body.user_details)){
+    console.log(req.body.user_details)
+    if(Object.entries(req.body.user_details).length > 0){
         const user = await User.findOne({contact : req.body.user_details.contact})
         if(user)
         res.status(200).send(`User Details : ${user}`)

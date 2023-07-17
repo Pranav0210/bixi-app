@@ -4,6 +4,7 @@ const cors = require('cors')
 require("dotenv").config();
 const authState = require('./middleware/authorize')
 const userRouter = require('./routes/route.user')
+const evRouter = require('./routes/route.ev')
 const authRouter = require('./routes/route.auth')
 const ridesRouter = require('./routes/route.rides')
 const adminRouter = require('./routes/route.admin')
@@ -24,6 +25,7 @@ app.use(cors())
 app.use('/api/auth', authRouter)
 app.use(authState)
 app.use('/api/user', userRouter)
+app.use('/api/ev', evRouter)
 app.use('/api/logout', (req,res)=>{
   req.session = null;
   res.status(200).send("Session terminated.")

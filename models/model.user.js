@@ -6,6 +6,7 @@ const UserSchema = mongoose.Schema({
     img:{type:String},
     contact: {type:Number, required:true},
     current_addr : {type:String},
+    last_ride : {type:mongoose.Types.ObjectId},
     total_rides:{type:Number},
     id_proof :{
         document_type : {

@@ -1,5 +1,6 @@
 const Ev = require('../models/model.ev');
 const Ride = require('../models/model.ride')
+const User = require('../models/model.user')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
@@ -83,6 +84,7 @@ const getAvailable = async (req,res)=>{
         if(!bookedEvs.includes(booking))
         return booking;
     })
+    //return the cost of the queried ride - UPDATE
     res.status(200).send(available)
 }
 
@@ -122,7 +124,7 @@ const newRide = async (req,res)=>{
     catch(err){
         console.log('Aborting Transaction...')
         session.abortTransaction();
-        res.send(`Could not complete transaction please try again...`)
+        res.status(500).send(`Could not complete transaction please try again...`)
     }
     finally{
         session.endSession();
@@ -138,31 +140,77 @@ const startRide = async(req,res)=>{
     //modify status of ev     
     const session  = await mongoose.startSession();
     await session.startTransaction();
-    const startedRide = await Ride.findOneAndUpdate(
-        {ride_id:req.body.ride_id},
-        {
-            status:'ongoing',
-            ride_time:{start: new Date()}
-        })
+    try{
+        const startedRide = await Ride.findOneAndUpdate(
+            {ride_id:req.body.ride_id},
+            {
+                helmet:req.body.helmet_qty,
+                status:'ongoing',
+                ride_time:{start: new Date()}
+            },{session}).exec()
+        
+        console.log(`ride started : ${startedRide.acknowledged}`)
     
-    console.log(`ride started : ${startedRide.acknowledged}`)
-    res.status(200).send(`Ride started successfully!`)
+        await Ev.findOneAndUpdate({ev_regd: req.body.ev_regd},{
+            status : 'running',
+            this_ride : req.body.ride_id
+        },{session}).exec()
+        session.commitTransaction();
+        res.status(201).send(`Ride start initiated`)
+    }
+    catch(err){
+        console.log(`Ride initiation aborted : ERR ${err}`)
+        session.abortTransaction();
+        res.status(500).send('Ride initiation failed.')
+    }
+    finally{
+        session.endSession();
+    }
 }
 const finishRide = async(req,res)=>{
-    //modify user bixi karma
-    //modify total_rides count in user
-    //modify toatl_rides total_hrs total_kms last_ride and status of ev
-    //send bill for the ride
     const session = mongoose.startSession();
     await session.startTransaction();
-    const finishedRide = await Ride.findOne({ride_id:req.body.ride_id}).exec()
+    const {end_time, kms, ride_id, ev_regd} = req.body.ride;
+    try{
+        const finishedRide = await Ride.findOne({ride_id:ride_id},{session}).exec()
+        const this_ev = await Ev.findOne({ev_regd:ev_regd},{session}).exec()
+        const rider = await User.findOne({_id : finishedRide.rider_id},{session}).exec()
         
         finishedRide.status='completed';
-        finishedRide.ride_time.end = new Date()
-        await finishedRide.save();
+        finishedRide.ride_time.end = end_time
+        finishedRide.distance = kms
+        await finishedRide.save({session});
         
-    // console.log(`ride finished : ${finishedRide.acknowledged}`)
-    res.status(200).send(`Ride status : finished`)
+        //modify total_rides total_hrs total_kms last_ride and status of ev
+        this_ev.status = 'idle'
+        this_ev.total_rides++;
+        this_ev.total_hrs += (end_time - finishedRide.ride_time.start)
+        this_ev.total_kms += kms
+        this_ev.last_ride = this_ev.this_ride
+        this_ev.this_ride = null
+        await this_ev.save({session})
+        //modify total_rides count in user
+        //modify user bixi karma
+        rider.total_rides++;
+        rider.last_ride = ride_id
+        await rider.save({session})
+        //calculate fare and send bill for the ride
+        const bill = await generateBilling(finishedRide, this_ev.model, rider.contact)
+        //console.log(`ride finished : ${finishedRide.acknowledged}`)
+        session.commitTransaction()
+        res.status(200).json({
+            msg: `Ride status : finished`,
+            bill: bill 
+        })
+    }
+    catch(err){
+        (await session).abortTransaction();
+        console.log(`Transaction failed : aborting changes`)
+        res.status(500).send(`Couldn't finish ride : ride not terminated`)
+    }
+    finally{
+        (await session).endSession();
+    }
 }
 const cancelRide = async(req,res)=>{
     const cancel_ride = await Ride.findOne({ride_id: req.body.ride_id}).exec()
@@ -172,7 +220,7 @@ const cancelRide = async(req,res)=>{
 }
 const editRide = async()=>{
     const updatedRide = await Ride.findOneAndUpdate({ride_id:req.body.ride_id},{...req.body.updateFields})
-    // console.log(`ride Edited : ${updatedRide.acknowledged}`)
+    console.log(`ride Edited : ${updatedRide.acknowledged}`)
     res.status(200).send(`Ride modified successfully!`)
 }
 

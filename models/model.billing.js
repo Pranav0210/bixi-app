@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
-const ReceiptSchema = mongoose.Schema({
-    receipt_id : {type:mongoose.Schema.objectId, required:true},
+const BillingSchema = mongoose.Schema({
+    billing_id : {type:mongoose.Schema.objectId, required:true},
     ride_id : {type:mongoose.Schema.objectId, required:true},
     ev_regd : {type:String, required:true},
     rider_id : {type:mongoose.Schema.objectId, required:true},
@@ -12,15 +12,23 @@ const ReceiptSchema = mongoose.Schema({
         duration : {type:Number},
     },
     distance : {type:Number, requred:true},
+    fare_rate : {type:Number, required:true},
     base_fare : {type:Number, required:true},
     fixed_adv : {type:Number, required:true},
-    penalty : {type:Number, required:true},
+    helmet : {
+        qty : {type:Number},
+        rent : {type:Number}
+    },
+    penalty : {
+        damage : {type:Number},
+        delay : {type:Number}
+    },
     total_fare : {type:Number, required:true},
     generated_time : {type:Date}                                       
 });
 
-Receipt.pre('save', ()=>{
-    this.receipt_id = this._id;
+Billing.pre('save', ()=>{
+    this.billing_id = this._id;
 });
 
-module.exports = mongoose.model('Receipt', ReceiptSchema)
+module.exports = mongoose.model('Billing', BillingSchema)

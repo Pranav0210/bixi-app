@@ -4,6 +4,7 @@ const EvSchema = mongoose.Schema({
     ev_id : {type:mongoose.Schema.Types.ObjectId, required:true},
     ev_regd : {type:String, required:true},
     type : {type:String},
+    image : {type:String},
     make : {type:String},
     model : {type:String},
     color : {type:String},

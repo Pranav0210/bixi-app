@@ -13,6 +13,6 @@ router.route('/finish')
 router.route('/cancel')
     .patch(cancelRide)
 router.route('/available')
-    .get(getAvailable)
+    .post(getAvailable)
 
 module.exports = router

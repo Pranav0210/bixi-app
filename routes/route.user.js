@@ -7,8 +7,8 @@ router.route('/profile')
     .get(getUser)
     .post(saveUser)
     .delete(deleteUser)
-router.post('/update', saveUser)
-// router.post('/delete',deleteUser)
+router.patch('/update', saveUser)
+// router.delete('/delete',deleteUser)
 
 
 module.exports = router

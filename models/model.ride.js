@@ -14,6 +14,7 @@ const RideSchema = mongoose.Schema({
         duration : {type:Number},
     },
     distance : {type:Number},
+    helmet : {type:Number},
     status : {
         type:String, 
         enum: {

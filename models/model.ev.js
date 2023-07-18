@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const EvSchema = mongoose.Schema({
-    ev_id : {type:mongoose.Schema.Types.ObjectId, required:true},
+    ev_id : {type:mongoose.Schema.Types.ObjectId, required: true},
     ev_regd : {type:String, required:true},
     type : {type:String},
     image : {type:String},
@@ -30,6 +30,7 @@ const EvSchema = mongoose.Schema({
 
 EvSchema.pre('save', ()=>{
     this.ev_id = this._id;
+    next();
 });
 
 module.exports = mongoose.model('Ev', EvSchema)

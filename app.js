@@ -1,6 +1,7 @@
 const express = require("express")
 const cookieSession = require('cookie-session')
 const cors = require('cors')
+const helmet = require('helmet')
 require("dotenv").config();
 const authState = require('./middleware/authorize')
 const userRouter = require('./routes/route.user')
@@ -9,11 +10,15 @@ const authRouter = require('./routes/route.auth')
 const ridesRouter = require('./routes/route.rides')
 const adminRouter = require('./routes/route.admin')
 const dbConnect = require('./db');
+const fileUpload = require("express-fileupload");
 // const session = require('expres-session')
 const app = express()
 
+app.use(cors())
+app.use(helmet())
 app.use(express.json());
-app.disable('x-powered-by')
+app.use(fileUpload());
+// app.disable('x-powered-by')
 
 app.use(cookieSession({
   name:'usrSID',
@@ -21,7 +26,6 @@ app.use(cookieSession({
   secret:process.env.COOKIE_SECRET,
 }));
 
-app.use(cors())
 app.use('/api/auth', authRouter)
 app.use(authState)
 app.use('/api/user', userRouter)

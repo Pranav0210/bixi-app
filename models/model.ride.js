@@ -1,8 +1,7 @@
 const mongoose = require('mongoose')
 
-
 const RideSchema = mongoose.Schema({
-    ride_id : {type:mongoose.Types.ObjectId, required:true},
+    // ride_id : {type:mongoose.Types.ObjectId, required:true},
     ev_regd : {type:String, required:true},
     rider_id : {type:mongoose.Types.ObjectId, required:true},
     req_schedule : {

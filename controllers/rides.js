@@ -60,29 +60,45 @@ const getRide = async(req,res)=>{
 }
 
 const getAvailable = async (req,res)=>{
-    const {ride_start, ride_end, range,} = req.body.ride_request
+    const {ride_start, ride_end, range} = req.body.ride_request
     // const startTime = new Date(ride_start)
-    const rangeEvList = Ev.aggregate([
+    const rangeEvList = await Ev.aggregate([
         { $match: { range: { $gte: range } } },
         {$sort: {range:1, total_rides:1}},
-        {$project: {ev_regd}}
-    ])
+        // {$project: {ev_regd}}
+    ]).project("ev_regd -_id").exec()
     strt_time = new Date(ride_start)
     end_time = new Date(ride_end)
+    console.log(strt_time,end_time)
     end_time.setMinutes(end_time.getMinutes()+15)
 
-    const bookedEvs = Ride.find({
-        $and:[
-            {$or:[
-                {req_schedule:{start:{$lt:end_time}}},
-                {req_schedule:{end:{$gt:strt_time}}}
-            ]},
-            {status:'booked'}
-        ]}).project({ev_regd:1}).exec()
-    
-    const available = rangeEvList.filter((booking)=>{
-        if(!bookedEvs.includes(booking))
-        return booking;
+    const bookedEvs = await Ride.find({
+         "$expr": 
+            {"$and": [
+                { "$or": [
+                    { "$and":[
+                        {"$lte": ["req_schedule.start", end_time] },
+                        {"$gte": ["req_schedule.start", strt_time] }
+                    ]},
+                    { "$and":[
+                        {"gte": ["req_schedule.end", strt_time] },
+                        {"lte": ["req_schedule.end", end_time] }
+                    ]},
+                    { "$and":[
+                        {"gte": ["req_schedule.end", end_time] },
+                        {"lte": ["req_schedule.start", strt_time] }
+                    ]}
+                ]},
+                { "status":'booked'}
+            ]} 
+        }).select({ev_regd:1, _id:0}).exec()
+    console.log(rangeEvList)
+    console.log(bookedEvs)
+    const available = rangeEvList.filter((ev)=>{
+        if(!bookedEvs.some(booked => booked.ev_regd == ev.ev_regd)){
+            console.log(ev)
+            return ev;
+        }
     })
     //return the cost of the queried ride - UPDATE
     res.status(200).send(available)
@@ -93,35 +109,52 @@ const newRide = async (req,res)=>{
     await session.startTransaction();
     // const ride = new Ride(req.body.ride)
     // await ride.save();
-    const {ev_regd} = req.body.ride_request;
+    const {ev_regd,req_schedule} = req.body.ride_request;
+    strt_time = new Date(req_schedule.start)
+    end_time = new Date(req_schedule.end)
+    console.log(strt_time,end_time)
     try{
         //Check if the ride is actually available now
-        const bookedEvs = Ride.find({
-            $and:[
-                {$or:[
-                    {req_schedule:{start:{$lt:end_time}}},
-                    {req_schedule:{end:{$gt:strt_time}}}
-                ]},
-                {status:'booked'}
-            ]},{session}).project({ev_regd:1}).exec()
-        if(bookedEvs.includes(ev_regd)){
-            res.status(404).send(`The requested ev ${ev_regd} is booked already.`)
+        const bookedEvs = await Ride.find({
+            "$expr": 
+               {"$and": [
+                   { "$or": [
+                       { "$and":[
+                           {"$lte": ["req_schedule.start", end_time] },
+                           {"$gte": ["req_schedule.start", strt_time] }
+                       ]},
+                       { "$and":[
+                           {"gte": ["req_schedule.end", strt_time] },
+                           {"lte": ["req_schedule.end", end_time] }
+                       ]},
+                       { "$and":[
+                           {"gte": ["req_schedule.end", end_time] },
+                           {"lte": ["req_schedule.start", strt_time] }
+                       ]}
+                   ]},
+                   { "status":"booked"}
+               ]} 
+           },null,{session}).select({ev_regd:1, _id:0}).exec()
+        console.log(bookedEvs)
+        if(bookedEvs.some(booked => booked.ev_regd == ev_regd)){
+            res.status(404).send(`Requested ev ${ev_regd} booked already.`)
+            session.endSession();
         }
         //CREATE RIDE DOCUMENT
         //IMPLEMENT PRIORITY LOGIC BASED ON BIXI KARMA - UPDATES
-        const ride = new Ride(req.body.ride_request)
-        var id;
-        ride.save((err,new_ride)=>{
-            id = new_ride._id;
-        },{session});
-        session.commitTransaction();
-        res.status(201).json({
-            done: true,
-            ride_id : id,
-            msg : "Ride booked successfully."
-        })
+        else{
+            const ride = await Ride.create([req.body.ride_request],{session});
+            console.log(ride)
+            session.commitTransaction();
+            res.status(201).json({
+                done: true,
+                // ride_id : ride[0]._id,
+                msg : "Ride booked successfully."
+            })
+        }
     }
     catch(err){
+        console.log(err)
         console.log('Aborting Transaction...')
         session.abortTransaction();
         res.status(500).send(`Could not complete transaction please try again...`)
@@ -142,19 +175,19 @@ const startRide = async(req,res)=>{
     await session.startTransaction();
     try{
         const startedRide = await Ride.findOneAndUpdate(
-            {ride_id:req.body.ride_id},
+            {ev_regd:req.body.ev_regd},
             {
                 helmet:req.body.helmet_qty,
                 status:'ongoing',
                 ride_time:{start: new Date()}
-            },{session}).exec()
+            },{session})
         
         console.log(`ride started : ${startedRide.acknowledged}`)
     
         await Ev.findOneAndUpdate({ev_regd: req.body.ev_regd},{
             status : 'running',
-            this_ride : req.body.ride_id
-        },{session}).exec()
+            // this_ride : req.body.ride_id
+        },{session})
         session.commitTransaction();
         res.status(201).send(`Ride start initiated`)
     }
@@ -213,9 +246,9 @@ const finishRide = async(req,res)=>{
     }
 }
 const cancelRide = async(req,res)=>{
-    const cancel_ride = await Ride.findOne({ride_id: req.body.ride_id}).exec()
-    cancel_ride.status = 'cancelled'
-    await cancel_ride.save()
+    const cancel_ride = await Ride.findOneAndUpdate({ride_id: req.body.ride_id},{cancel_ride: {status : 'cancelled'}})
+    
+    // await cancel_ride.save()
     res.status(200).send(`Ride cancelled`)
 }
 const editRide = async()=>{

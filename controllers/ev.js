@@ -15,23 +15,58 @@ const getEv = async (req,res)=>{
 }
 const saveEv = async(req,res)=>{
     try{
-        let findResult = await Ev.findOne({ev_regd:req.body.query_field.ev_regd}).exec();
-        console.log(findResult)
-        if(findResult){
-            findResult = {... findResult, ...req.body.update_fields}
-            await findResult.save();
-            res.status(204).send(`Ev details updated successfully.`)
+    //     var findResult = await Ev.findOne({ev_regd:req.body.query_field.ev_regd}).exec();
+    //     console.log(findResult instanceof Ev, findResult)
+    //     if(findResult){
+    //         findResult = {... findResult, ...req.body.update_fields}
+    //         await findResult.save();
+    //         res.status(204).send(`Ev details updated successfully.`)
+    //     }
+    //     else{
+    //         // if(req.files){
+    //         //     const imgPath = req.files.path[0]
+    //         //     const blob = fs.readFileSync(imgPath)
+    //         //     const imgUrl = await imgUpload(blob) 
+    //         // }
+    //         const newEv = new Ev({...req.body.update_fields})
+    //         // if(imgUrl){
+    //         //     newEv.image = imgUrl
+    //         // }
+    //         await newEv.save();
+    //         res.status(201).send(`Ev created`)
+    //     }
+    // }
+    // catch(err){
+    //     res.send(`error: ${err}`)
+    // }
+    const options = {upsert:true,setDefaultsOnInsert:true,new:true}
+        if(!req.body.update_fields && !req.files){
+            res.send('No data. Update failed.')
         }
-        else{
-            if(req.files){
-                const imgPath = req.files.path[0]
+        await Ev.findOneAndUpdate(req.body.query_field,req.body.update_fields, options)
+        .then((result)=>{
+            console.log(`Ev updated successfully:${result}`)
+        })
+        if(req.files &&  req.files.length > 0){
+            var imgUrls = []
+            req.files.forEach(async(img,index) => {
+                const imgPath = img.path
                 const blob = fs.readFileSync(imgPath)
-                imgUrl = await imgUpload(blob) 
-            }
-            const newEv = new Ev({...req.body.update_fields, image : imgUrl})
-            await newEv.save();
-            res.status(201).send(`Ev created`)
+                imgUrls[index] = await imgUpload(blob) 
+            })
+            await Ev.findOneAndUpdate(req.body.query_field,{ image : imgUrls[0]}, options )
+            .then((result)=>{
+                console.log(`Ev image updated successfully: ${result}`)
+            })
         }
+        res.status(201).send(`Ev updated successfully`)
+        
+        // else{
+        //     }
+        //     const newUser = new User({...req.body.update_fields, img : imgUrls[0], document_img : imgUrls[1]})
+        //     await newUser.save();
+        //     res.status(201).send(`user created`)
+        // }
     }
     catch(err){
         res.send(`error: ${err}`)

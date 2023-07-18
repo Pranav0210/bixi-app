@@ -13,27 +13,39 @@ const getUser = async (req,res)=>{
     else 
         res.status(404).send('Query empty!')
 }
+/**
+ * MUST NOT be used to update contact details of user else it will update the images to a , provide support later
+ * @param {*} req 
+ * @param {*} res 
+ */
 const saveUser = async(req,res)=>{
     try{
-        let findResult = await User.findOne({contact:req.body.query_field.contact}).exec();
-        console.log(findResult)
-        if(findResult){
-            findResult = {... findResult, ...req.body.update_fields}
-            await findResult.save();
-            res.status(204).send(`User updated successfully.`)
+        // var {update_fields} = req.body.update_fields;
+        const options = {upsert:true,setDefaultsOnInsert:true,new:true}
+        await User.findOneAndUpdate(req.body.query_field,req.body.update_fields, options)
+        .then((result)=>{
+            console.log(`User updated successfully:${result}`)
+        })
+        if(req.files &&  req.files.length > 0){
+            var imgUrls = []
+            req.files.forEach(async(img,index) => {
+                const imgPath = img.path
+                const blob = fs.readFileSync(imgPath)
+                imgUrls[index] = await imgUpload(blob) 
+            })
+            await User.findOneAndUpdate(req.body.query_field,{ img : imgUrls[0], aadhar_img : imgUrls[1]}, options )
+            .then((result)=>{
+                console.log(`User images updated successfully: ${result}`)
+            })
         }
-        else{
-            if(req.files){
-                req.files.forEach(async(img,index) => {
-                    const imgPath = img.path
-                    const blob = fs.readFileSync(imgPath)
-                    imgUrls[index] = await imgUpload(blob) 
-                })
-            }
-            const newUser = new User({...req.body.update_fields, img : imgUrls[0], document_img : imgUrls[1]})
-            await newUser.save();
-            res.status(201).send(`user created`)
-        }
+        res.status(201).send(`User updated successfully`)
+        
+        // else{
+        //     }
+        //     const newUser = new User({...req.body.update_fields, img : imgUrls[0], document_img : imgUrls[1]})
+        //     await newUser.save();
+        //     res.status(201).send(`user created`)
+        // }
     }
     catch(err){
         res.send(`error: ${err}`)

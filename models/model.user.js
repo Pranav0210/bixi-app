@@ -7,14 +7,16 @@ const UserSchema = mongoose.Schema({
     contact: {type:Number, required:true},
     current_addr : {type:String},
     last_ride : {type:mongoose.Types.ObjectId},
-    total_rides:{type:Number},
+    total_rides:{type:Number,default:0},
     id_proof :{
-        document_type : {
+        doc_id : {type:String},
+        doc_img:{type:String},
+        doc_type : {
         type:String,
         enum : ['PAN', 'DL'],
         default : 'DL',  
+        }
     },
-    document_img:{type:String}},
     aadhar:{type:Number, required:true},
     aadhar_img:{type:String, required:true},
     bixi_karma : {type:Number}

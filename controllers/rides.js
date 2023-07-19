@@ -69,29 +69,35 @@ const getAvailable = async (req,res)=>{
     ]).project("ev_regd -_id").exec()
     strt_time = new Date(ride_start)
     end_time = new Date(ride_end)
-    console.log(strt_time,end_time)
+    if(strt_time>end_time || strt_time < new Date()){
+        res.status(404).send(`Invalid timings`)
+        return;
+    }
     end_time.setMinutes(end_time.getMinutes()+15)
+    console.log(strt_time,end_time)
 
-    const bookedEvs = await Ride.find({
-         "$expr": 
-            {"$and": [
-                { "$or": [
-                    { "$and":[
-                        {"$lte": ["req_schedule.start", end_time] },
-                        {"$gte": ["req_schedule.start", strt_time] }
-                    ]},
-                    { "$and":[
-                        {"gte": ["req_schedule.end", strt_time] },
-                        {"lte": ["req_schedule.end", end_time] }
-                    ]},
-                    { "$and":[
-                        {"gte": ["req_schedule.end", end_time] },
-                        {"lte": ["req_schedule.start", strt_time] }
-                    ]}
-                ]},
-                { "status":'booked'}
-            ]} 
-        }).select({ev_regd:1, _id:0}).exec()
+    const bookedEvs_type1 = await Ride.find({
+        $and :[
+            {"req_schedule.end":{$gte:end_time}},
+            {"req_schedule.start":{$lte:strt_time}},
+            {status:{$in:["booked","ongoing"]}}
+        ]
+    }).select({ev_regd:1}).exec()
+    const bookedEvs_type2 = await Ride.find({
+        $and :[
+            {"req_schedule.start":{$gte:strt_time}},
+            {"req_schedule.start":{$lte:end_time}},
+            {status:{$in:["booked","ongoing"]}}
+        ]
+    }).select({ev_regd:1}).exec()
+    const bookedEvs_type3 = await Ride.find({
+        $and :[
+            {"req_schedule.end":{$gte:strt_time}},
+            {"req_schedule.end":{$lte:end_time}},
+            {status:{$in:["booked","ongoing"]}}
+        ]
+    }).select({ev_regd:1}).exec()
+    const bookedEvs = bookedEvs_type1.concat(bookedEvs_type2,bookedEvs_type3)
     console.log(rangeEvList)
     console.log(bookedEvs)
     const available = rangeEvList.filter((ev)=>{
@@ -112,29 +118,36 @@ const newRide = async (req,res)=>{
     const {ev_regd,req_schedule} = req.body.ride_request;
     strt_time = new Date(req_schedule.start)
     end_time = new Date(req_schedule.end)
+    end_time.setMinutes(end_time.getMinutes()+15)
     console.log(strt_time,end_time)
+    if(strt_time>end_time || strt_time < new Date()){
+        res.status(404).send(`Invalid timings`)
+        return;
+    }
     try{
         //Check if the ride is actually available now
-        const bookedEvs = await Ride.find({
-            "$expr": 
-               {"$and": [
-                   { "$or": [
-                       { "$and":[
-                           {"$lte": ["req_schedule.start", end_time] },
-                           {"$gte": ["req_schedule.start", strt_time] }
-                       ]},
-                       { "$and":[
-                           {"gte": ["req_schedule.end", strt_time] },
-                           {"lte": ["req_schedule.end", end_time] }
-                       ]},
-                       { "$and":[
-                           {"gte": ["req_schedule.end", end_time] },
-                           {"lte": ["req_schedule.start", strt_time] }
-                       ]}
-                   ]},
-                   { "status":"booked"}
-               ]} 
-           },null,{session}).select({ev_regd:1, _id:0}).exec()
+        const bookedEvs_type1 = await Ride.find({
+            $and :[
+                {"req_schedule.end":{$gte:end_time}},
+                {"req_schedule.start":{$lte:strt_time}},
+                {status:{$in:["booked","ongoing"]}}
+            ]
+        }).select({ev_regd:1, _id:0}).exec()
+        const bookedEvs_type2 = await Ride.find({
+            $and :[
+                {"req_schedule.start":{$gte:strt_time}},
+                {"req_schedule.start":{$lte:end_time}},
+                {status:{$in:["booked","ongoing"]}}
+            ]
+        }).select({ev_regd:1}).exec()
+        const bookedEvs_type3 = await Ride.find({
+            $and :[
+                {"req_schedule.end":{$gte:strt_time}},
+                {"req_schedule.end":{$lte:end_time}},
+                {status:{$in:["booked","ongoing"]}}
+            ]
+        }).select({ev_regd:1}).exec()
+        const bookedEvs = bookedEvs_type1.concat(bookedEvs_type2,bookedEvs_type3)
         console.log(bookedEvs)
         if(bookedEvs.some(booked => booked.ev_regd == ev_regd)){
             res.status(404).send(`Requested ev ${ev_regd} booked already.`)
@@ -148,7 +161,7 @@ const newRide = async (req,res)=>{
             session.commitTransaction();
             res.status(201).json({
                 done: true,
-                // ride_id : ride[0]._id,
+                ride_object : ride,
                 msg : "Ride booked successfully."
             })
         }
@@ -165,7 +178,7 @@ const newRide = async (req,res)=>{
 }
 
 /**
- * 
+ * Future support to be added for OTP verification of user for ride start
  * @param {*} req 
  * @param {*} res 
  */
@@ -175,12 +188,12 @@ const startRide = async(req,res)=>{
     await session.startTransaction();
     try{
         const startedRide = await Ride.findOneAndUpdate(
-            {ev_regd:req.body.ev_regd},
+            {_id:req.body.ride_id},
             {
                 helmet:req.body.helmet_qty,
                 status:'ongoing',
                 ride_time:{start: new Date()}
-            },{session})
+            },{new:true},{session})
         
         console.log(`ride started : ${startedRide.acknowledged}`)
     
@@ -189,7 +202,10 @@ const startRide = async(req,res)=>{
             // this_ride : req.body.ride_id
         },{session})
         session.commitTransaction();
-        res.status(201).send(`Ride start initiated`)
+        res.status(201).send({
+            ride_object : startedRide,
+            msg: `Ride started`
+        })
     }
     catch(err){
         console.log(`Ride initiation aborted : ERR ${err}`)
@@ -203,30 +219,42 @@ const startRide = async(req,res)=>{
 const finishRide = async(req,res)=>{
     const session = mongoose.startSession();
     await session.startTransaction();
-    const {end_time, kms, ride_id, ev_regd} = req.body.ride;
+    const {end_time, kms, ride_id, ev_regd, duration} = req.body.ride;
     try{
-        const finishedRide = await Ride.findOne({ride_id:ride_id},{session}).exec()
-        const this_ev = await Ev.findOne({ev_regd:ev_regd},{session}).exec()
-        const rider = await User.findOne({_id : finishedRide.rider_id},{session}).exec()
-        
-        finishedRide.status='completed';
-        finishedRide.ride_time.end = end_time
-        finishedRide.distance = kms
-        await finishedRide.save({session});
-        
+        const finishedRide = await Ride.findOneAndUpdate({_id:ride_id},
+            {
+                status :'completed',
+                ride_time : {
+                    end : end_time,
+                    duration : duration
+                },
+                distance : kms
+            },{session})
         //modify total_rides total_hrs total_kms last_ride and status of ev
-        this_ev.status = 'idle'
-        this_ev.total_rides++;
-        this_ev.total_hrs += (end_time - finishedRide.ride_time.start)
-        this_ev.total_kms += kms
-        this_ev.last_ride = this_ev.this_ride
-        this_ev.this_ride = null
-        await this_ev.save({session})
+        const this_ev = await Ev.findOneAndUpdate({ev_regd:ev_regd},{
+            $set : {
+                status : 'idle',
+            },
+            $inc:{
+                total_rides : 1,
+                total_hrs : (end_time - finishedRide.ride_time.start),
+                total_kms : kms,
+            }
+            // this_ev.last_ride = this_ev.this_ride,
+            // this_ev.this_ride = null,
+
+        },{session})
         //modify total_rides count in user
-        //modify user bixi karma
-        rider.total_rides++;
-        rider.last_ride = ride_id
-        await rider.save({session})
+        const rider = await User.findOneAndUpdate({_id : finishedRide.rider_id},{
+            $inc : {
+                total_rides : 1
+            },
+            $set : {
+                last_ride : ride_id
+            }
+        },{session})
+        //modify user bixi karma -  LATER upgrade
+        
         //calculate fare and send bill for the ride
         const bill = await generateBilling(finishedRide, this_ev.model, rider.contact)
         //console.log(`ride finished : ${finishedRide.acknowledged}`)
@@ -246,10 +274,18 @@ const finishRide = async(req,res)=>{
     }
 }
 const cancelRide = async(req,res)=>{
-    const cancel_ride = await Ride.findOneAndUpdate({ride_id: req.body.ride_id},{cancel_ride: {status : 'cancelled'}})
-    
+    try{
+        const cancel_ride = await Ride.findOneAndUpdate({_id: req.body.ride_id},{status : 'cancelled'},{new:true})
+        res.status(200).json({
+            msg:`Ride cancelled`,
+            ride_object : cancel_ride
+        })
+    }
+    catch(err){
+        console.log(err)
+        res.status(500).send(`Failed to cancel ride.`)
+    }
     // await cancel_ride.save()
-    res.status(200).send(`Ride cancelled`)
 }
 const editRide = async()=>{
     const updatedRide = await Ride.findOneAndUpdate({ride_id:req.body.ride_id},{...req.body.updateFields})

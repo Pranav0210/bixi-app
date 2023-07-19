@@ -1,5 +1,6 @@
 const Billing = require('../models/model.billing')
 const Coupon = require('../models/model.coupon')
+const Price = require('../models/model.price')
 
 
 const createCoupon = async(req,res)=>{

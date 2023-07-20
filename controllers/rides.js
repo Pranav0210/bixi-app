@@ -66,7 +66,7 @@ const getAvailable = async (req,res)=>{
         { $match: { range: { $gte: range } } },
         {$sort: {range:1, total_rides:1}},
         // {$project: {ev_regd}}
-    ]).project("ev_regd -_id").exec()
+    ]).project("ev_regd -_id  top_speed range").exec()
     strt_time = new Date(ride_start)
     end_time = new Date(ride_end)
     if(strt_time>end_time || strt_time < new Date()){

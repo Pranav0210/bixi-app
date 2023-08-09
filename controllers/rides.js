@@ -158,7 +158,7 @@ const newRide = async (req,res)=>{
         else{
             const ride = await Ride.create([req.body.ride_request],{session});
             console.log(ride)
-            session.commitTransaction();
+            await session.commitTransaction();
             res.status(201).json({
                 done: true,
                 ride_object : ride,
@@ -201,7 +201,7 @@ const startRide = async(req,res)=>{
             status : 'running',
             // this_ride : req.body.ride_id
         },{session})
-        session.commitTransaction();
+        await session.commitTransaction();
         res.status(201).send({
             ride_object : startedRide,
             msg: `Ride started`
@@ -258,7 +258,7 @@ const finishRide = async(req,res)=>{
         //calculate fare and send bill for the ride
         const bill = await generateBilling(finishedRide, this_ev.model, rider.contact)
         //console.log(`ride finished : ${finishedRide.acknowledged}`)
-        session.commitTransaction()
+        await session.commitTransaction()
         res.status(200).json({
             msg: `Ride status : finished`,
             bill: bill 

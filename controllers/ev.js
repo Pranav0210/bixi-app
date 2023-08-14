@@ -13,6 +13,17 @@ const getEv = async (req,res)=>{
     else 
         res.status(404).send('Query empty!')
 }
+const getAllEvs = async (req,res)=>{
+    
+    try{
+        const EvList = await Ev.find({}).exec();
+        res.status(200).send(EvList);
+    }
+    catch(err){
+        console.log(err)
+        res.status(500).send(`Error Listing Vehicles`)
+    }
+}
 const saveEv = async(req,res)=>{
     try{
     //     var findResult = await Ev.findOne({ev_regd:req.body.query_field.ev_regd}).exec();
@@ -81,4 +92,4 @@ const deleteEv = async(req,res)=>{
     res.send(`Deleted ${deletedCount} Ev profile`)
 }
 
-module.exports = {getEv,saveEv,evQuery,deleteEv}
+module.exports = {getEv,getAllEvs,saveEv,evQuery,deleteEv}

@@ -3,7 +3,7 @@ const cookieSession = require('cookie-session')
 const cors = require('cors')
 const helmet = require('helmet')
 require("dotenv").config();
-const authState = require('./middleware/authorize')
+const {authorize} = require('./middleware/authorize')
 const userRouter = require('./routes/route.user')
 const evRouter = require('./routes/route.ev')
 const authRouter = require('./routes/route.auth')
@@ -26,8 +26,8 @@ app.use(cookieSession({
   secret:process.env.COOKIE_SECRET,
 }));
 
+app.use(authorize)
 app.use('/api/auth', authRouter)
-app.use(authState)
 app.use('/api/user', userRouter)
 app.use('/api/ev', evRouter)
 app.use('/api/logout', (req,res)=>{

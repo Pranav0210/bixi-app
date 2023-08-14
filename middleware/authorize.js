@@ -13,4 +13,18 @@ async function authorize(req,res,next){
         next();
     }
 };
-module.exports = authorize;
+
+async function adminAuth(req,res,next){
+    if(req.session.type == 'admin'){
+        next();
+    }
+    else{
+        res.status(403).send(
+            `Forbidden Route.`
+        )
+    }
+}
+module.exports = {
+    authorize,
+    adminAuth
+};

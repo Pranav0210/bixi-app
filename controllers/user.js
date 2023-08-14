@@ -13,6 +13,17 @@ const getUser = async (req,res)=>{
     else 
         res.status(404).send('Query empty!')
 }
+const getAllUsers = async (req,res)=>{
+    
+    try{
+        const UserList = await User.find({}).exec();
+        res.status(200).send(UserList);
+    }
+    catch(err){
+        console.log(err)
+        res.status(500).send(`Error Listing Users`)
+    }
+}
 /**
  * MUST NOT be used to update contact details of user else it will update the images to a , provide support later
  * @param {*} req 
@@ -60,4 +71,4 @@ const deleteUser = async(req,res)=>{
     res.send(`Deleted ${deletedCount} user profile`)
 }
 
-module.exports = {getUser,saveUser,userQuery,deleteUser}
+module.exports = {getUser,getAllUsers,saveUser,userQuery,deleteUser}

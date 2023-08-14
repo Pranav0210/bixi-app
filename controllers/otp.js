@@ -61,26 +61,54 @@ async function sendOtp(req, res) {
  */
 async function verifyOtp(req,res) {
     try{
-        const query = await OtpStore.findOne({
-            msin : req.body.user_msin,
-        }).exec()
-        console.log(query)
-            if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
-                await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
-                req.session.token = 'newToken';
-                // return true;
-                res.status(200).send(`User Verified.`)
+        if(req.authLevelRequested == 'admin'){
+            const isAdmin = await Admin.exists({
+                contact:req.body.user_msin
+            }).exec()
+            if(isAdmin){
+                const query = await OtpStore.findOne({
+                    msin : req.body.user_msin,
+                }).exec()
+                console.log(query)
+                    if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
+                        await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
+                        req.session.type = 'Admin';
+                        // return true;
+                        res.status(200).send(`Admin Verified.`)
+                    }
+                    else{
+                        res.status(401).send(`OTP verification failed. Try again`)
+                        // return false
+                    } 
             }
             else{
-                res.status(401).send(`OTP verification failed. Try again`)
-                // return false
-            } 
+                res.status(403).send({
+                    msg:`Admin profile doesn't exist`
+                })
+            }
+        }
+        else{
+            const query = await OtpStore.findOne({
+                msin : req.body.user_msin,
+            }).exec()
+            console.log(query)
+                if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
+                    await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
+                    req.session.type = 'User';
+                    // return true;
+                    res.status(200).send(`User Verified.`)
+                }
+                else{
+                    res.status(401).send(`OTP verification failed. Try again`)
+                    // return false
+                } 
+        }
 
     }
     catch{
         (err)=>{
         console.log(`Verification failed : ${err}`)
-        res.status(501).end(`Internal server error`)
+        res.status(500).end(`Internal server error`)
     }}
 }
 function generateOTP(){

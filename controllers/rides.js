@@ -21,6 +21,18 @@ const getBookings = async(req,res)=>{
         res.status(404).send(`Request failed.`)
     }
 }
+
+const getOngoing = async(req,res)=> {
+    try{
+        const ongoing = await Ride.find({status:"ongoing"}).exec();
+        res.status(200).send(ongoing)
+    }
+    catch(err){
+        console.log(err);
+        res.status(404).send(`Request failed.`)
+    }
+}
+
 const getMyBooking = async(req,res)=>{
     try{
         const booking = await Ride.findOne({status:"booked"});
@@ -300,6 +312,7 @@ module.exports = {
     newRide, 
     cancelRide, 
     editRide,
+    getOngoing,
     getMyBooking, 
     getBookings, 
     addBookings, 

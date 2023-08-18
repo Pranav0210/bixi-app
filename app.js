@@ -26,8 +26,8 @@ app.use(cookieSession({
   secret:process.env.COOKIE_SECRET,
 }));
 
-app.use(authorize)
 app.use('/api/auth', authRouter)
+app.use(authorize)
 app.use('/api/user', userRouter)
 app.use('/api/ev', evRouter)
 app.use('/api/logout', (req,res)=>{

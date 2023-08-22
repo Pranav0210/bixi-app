@@ -16,15 +16,15 @@ const createBill = async(ride,ev,contact)=>{
         distance,
         req_schedule,
     } = ride
-    const {
-        delay_rate,
-        helm_rate,
-        damage_rate,
-        fare_rate,
-        fixed_adv,
+    // const {
+    //     delay_rate,
+    //     helm_rate,
+    //     damage_rate,
+    //     fare_rate,
+    //     fixed_adv,
 
-    } = await Price.findOne({ev_model:ev}).exec();
-
+    // } = await Price.findOne().exec();
+    const fare_rate = 1,fixed_adv = 60, helm_rate = 100, damage_rate = 0, delay_rate = 1.5
     var base_fare = fare_rate*ride_time.duration
     var rent = helmet*helm_rate
     const penalty = {

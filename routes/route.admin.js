@@ -1,19 +1,36 @@
 const express = require('express')
 const router = express.Router()
-const {getRides,editRide,cancelRide,getRide,newRide,getBookings,addBookings, getOngoing} = require('../controllers/rides')
+const {getRides,editRide,cancelRide,getRide,newRide,getBookings,addBookings, getOngoing, startRide, finishRide} = require('../controllers/rides')
 const {getUser,getAllUsers,saveUser} = require('../controllers/user')
-const {adminAuth} =  require('../middleware/authorize')
-const { getEv,getAllEvs, deleteEv } = require('../controllers/ev')
+const {adminAuth, vehicleAuth} =  require('../middleware/authorize')
+const { getEv,getAllEvs, deleteEv, saveEv } = require('../controllers/ev')
 const {createAdmin} = require('../controllers/admin')
 
 router.use(adminAuth)
+router.route('/user')
+.get(getUser)
+.post(saveUser)
+router.route('/access')
+.get()
+.post()
+
+router.post('/new-admin',createAdmin)
+
+router.get('/all-users',getAllUsers)
+router.get('/all-ev',getAllEvs)
+router.get('/all-rides',getRides)
+
+
+router.use(vehicleAuth)    // check if the order in the code matters and affects only the routes below or all of them
 router.route('/ev')
     .get(getEv)
-    .post()
+    .post(saveEv)
     .delete(deleteEv)
 router.route('/ride')
     .get(getRide)
     .post(newRide)
+router.post('/ride-start', startRide)
+router.post('/ride-finish', finishRide)
 router.route('/ongoing')
     .get(getOngoing)
 router.route('/bookings')
@@ -23,17 +40,4 @@ router.route('/cancel_ride')
     .post(cancelRide)
 router.route('/edit_ride')
     .post(editRide)
-router.route('/user')
-    .get(getUser)
-    .post(saveUser)
-router.route('/access')
-    .get()
-    .post()
-
-router.post('/new-admin',createAdmin)
-
-router.get('/all-users',getAllUsers)
-router.get('/all-ev',getAllEvs)
-router.get('/all-rides',getRides)
-
 module.exports = router

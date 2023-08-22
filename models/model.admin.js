@@ -17,9 +17,9 @@ const AdminSchema = mongoose.Schema({
     },
     aadhar:{type:Number, required:true},
     aadhar_img:{type:String, required:true},
-    rides_approved: {type:Number},
-    rides_declined: {type:Number},
-    rides_closed: {type:Number}
+    // rides_approved: {type:Number},
+    // rides_declined: {type:Number},
+    // rides_closed: {type:Number}
 })
 
 module.exports = mongoose.model('Admin', AdminSchema)

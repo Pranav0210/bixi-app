@@ -15,13 +15,19 @@ async function authorize(req,res,next){
 };
 
 async function adminAuth(req,res,next){
-    if(req.session.type == 'admin'){
-        next();
+    try{
+        if(req.session.type == 'admin'){
+            next();
+        }
+        else{
+            res.status(403).send(
+                `Forbidden Route.`
+            )
+        }
     }
-    else{
-        res.status(403).send(
-            `Forbidden Route.`
-        )
+    catch(err){
+        console.log(err);
+        res.status(500).send('An Error Occured.')
     }
 }
 module.exports = {

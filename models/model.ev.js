@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 
 const EvSchema = mongoose.Schema({
     ev_id : {type:mongoose.Schema.Types.ObjectId, required: true},
+    admin: {type:mongoose.Schema.Types.ObjectId, required:true},
     ev_regd : {type:String, required:true},
     type : {type:String},
     image : {type:String},

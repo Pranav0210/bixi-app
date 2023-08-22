@@ -1,5 +1,7 @@
 const crypto = require('crypto')
 const OtpStore = require('../models/model.otpstore')
+const Admin = require('../models/model.admin')
+const User = require('../models/model.user')
 
 async function sendOtp(req, res) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -62,10 +64,10 @@ async function sendOtp(req, res) {
 async function verifyOtp(req,res) {
     try{
         if(req.authLevelRequested == 'admin'){
-            const isAdmin = await Admin.exists({
+            const admin = await Admin.findOne({
                 contact:req.body.user_msin
             }).exec()
-            if(isAdmin){
+            if(admin){
                 const query = await OtpStore.findOne({
                     msin : req.body.user_msin,
                 }).exec()
@@ -73,6 +75,7 @@ async function verifyOtp(req,res) {
                     if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
                         await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
                         req.session.type = 'Admin';
+                        req.session.user_id = admin._id;
                         // return true;
                         res.status(200).send(`Admin Verified.`)
                     }
@@ -95,6 +98,11 @@ async function verifyOtp(req,res) {
                 if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
                     await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
                     req.session.type = 'User';
+                    const regdUser = await User.findOne({contact:req.body.user_msin}).exec()
+                    if(regdUser)
+                        req.session.user_id = regdUser._id;
+                    else
+                        req.sessin.user_id = null
                     // return true;
                     res.status(200).send(`User Verified.`)
                 }

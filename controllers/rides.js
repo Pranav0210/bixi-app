@@ -1,6 +1,7 @@
 const Ev = require('../models/model.ev');
 const Ride = require('../models/model.ride')
 const User = require('../models/model.user')
+const {generateOtp} = require('./otp')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
@@ -168,7 +169,7 @@ const newRide = async (req,res)=>{
         //CREATE RIDE DOCUMENT
         //IMPLEMENT PRIORITY LOGIC BASED ON BIXI KARMA - UPDATES
         else{
-            const ride = await Ride.create([req.body.ride_request],{session});
+            const ride = await Ride.create([{...req.body.ride_request, secret:generateOtp()}],{session});
             console.log(ride)
             await session.commitTransaction();
             res.status(201).json({
@@ -228,12 +229,37 @@ const startRide = async(req,res)=>{
         session.endSession();
     }
 }
+const requestfinish = async(req,res)=>{
+    const {requestedEndTime, ride_id} = req.body
+    const ride = await Ride.findOne({_id:ride_id}).exec();
+    if(ride.rider_id !== req.session.user_id){
+        console.log(`User mismatch`)
+        res.status(403).send(`Unaccessible ride. User doesn't match`)
+    }
+    if(requestedEndTime < ride.req_schedule.end){
+        res.status(400).send(`Cannot end ride before booking finish`)
+    }
+    else{
+        if(requestedEndTime.getHours() == ride.endRequests.findLast().getHours() && 
+            requestedEndTime.getMinutes() == ride.endRequests.findLast().getMinutes())
+            res.status(400).send(`Too many requests`)
+        try{
+            ride.endRequests.push(requestedEndTime)
+            await ride.save()
+            res.status(200).send(`Request registered successfully`)
+        }
+        catch(err){
+            console.log(err)
+            res.status(500).send(`Failed to request ride termination`)
+        }
+    }
+}
 const finishRide = async(req,res)=>{
     const session = mongoose.startSession();
     await session.startTransaction();
     const {end_time, kms, ride_id, ev_regd, duration} = req.body.ride;
     try{
-        const finishedRide = await Ride.findOneAndUpdate({_id:ride_id},
+        const finishedRide = await Ride.findOneAndUpdate({_id:ride_id, },
             {
                 status :'completed',
                 ride_time : {
@@ -318,4 +344,5 @@ module.exports = {
     addBookings, 
     getAvailable, 
     startRide, 
-    finishRide }
+    finishRide,
+    requestfinish }

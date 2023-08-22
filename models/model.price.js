@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 
 const PriceSchema = mongoose.Schema({
-    ev_model:{type:String},
     delay_rate:{type:Number},
     helm_rate:{type:Number},
     damage_rate:{type:Number},

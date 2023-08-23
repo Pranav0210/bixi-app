@@ -16,7 +16,7 @@ const getEv = async (req,res)=>{
 const getAllEvs = async (req,res)=>{
     
     try{
-        const EvList = await Ev.find({}).exec();
+        const EvList = await Ev.find({admin:req.session.user_id}).exec();
         res.status(200).send(EvList);
     }
     catch(err){

@@ -63,10 +63,11 @@ async function sendOtp(req, res) {
  */
 async function verifyOtp(req,res) {
     try{
-        if(req.authLevelRequested == 'admin'){
+        if(req.body.authLevelRequested == 'admin'){
             const admin = await Admin.findOne({
-                contact:req.body.user_msin
+                contact:Number(req.body.user_msin.toString().slice(2))
             }).exec()
+            console.log(admin)
             if(admin){
                 const query = await OtpStore.findOne({
                     msin : req.body.user_msin,
@@ -98,11 +99,11 @@ async function verifyOtp(req,res) {
                 if(query!=null && query.otp_val == req.body.otp && query.expiry>new Date()){
                     await OtpStore.deleteOne({msin : req.body.user_msin,}).exec()
                     req.session.type = 'User';
-                    const regdUser = await User.findOne({contact:req.body.user_msin}).exec()
+                    const regdUser = await User.findOne({contact:Number(req.body.user_msin.toString().slice(2))}).exec()
                     if(regdUser)
                         req.session.user_id = regdUser._id;
                     else
-                        req.sessin.user_id = null
+                        req.session.user_id = null
                     // return true;
                     res.status(200).send(`User Verified.`)
                 }

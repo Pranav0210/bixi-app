@@ -21,7 +21,7 @@ router.get('/all-ev',getAllEvs)
 router.get('/all-rides',getRides)
 
 
-router.use(vehicleAuth)    // check if the order in the code matters and affects only the routes below or all of them
+// router.use(vehicleAuth)    // check if the order in the code matters and affects only the routes below or all of them
 router.route('/ev')
     .get(getEv)
     .post(saveEv)

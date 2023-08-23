@@ -4,6 +4,7 @@ const RideSchema = mongoose.Schema({
     // ride_id : {type:mongoose.Types.ObjectId, required:true},
     ev_regd : {type:String, required:true},
     rider_id : {type:mongoose.Types.ObjectId, required:true},
+    admin_id: {type:mongoose.Types.ObjectId, required:true},
     secret: {type:Number, required:true},
     req_schedule : {
         start : {type:Date},
@@ -32,7 +33,7 @@ const RideSchema = mongoose.Schema({
             txn_id : {type:String, required:true},
             mode: {type:String}
     }]},
-    location:{type:String},
+    station:{lat:String, long:String, address:String},
     
 },
 {timestamp:true});

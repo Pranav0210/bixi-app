@@ -16,7 +16,7 @@ async function authorize(req,res,next){
 
 async function adminAuth(req,res,next){
     try{
-        if(req.session.type == 'admin'){
+        if(req.session.type == 'Admin'){
             next();
         }
         else{

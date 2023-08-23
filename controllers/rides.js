@@ -10,12 +10,18 @@ const getMyRides = async(req,res)=>{
     res.status(200).send(allRides)
 }
 const getRides = async(req,res)=>{
-    const allRides = await Ride.find({});
-    res.status(200).send(allRides)
+    try{
+        const allRides = await Ride.find({admin_id:req.session.user_id}).exec();
+        res.status(200).send(allRides)
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).send(`Failed to fetch rides.`)
+    }
 }
 const getBookings = async(req,res)=>{
     try{
-        const bookings = await Ride.find({status:"booked"}).exec();
+        const bookings = await Ride.find({status:"booked",admin:req.session.user_id}).exec();
         res.status(200).send(bookings)
     }
     catch{
@@ -169,7 +175,8 @@ const newRide = async (req,res)=>{
         //CREATE RIDE DOCUMENT
         //IMPLEMENT PRIORITY LOGIC BASED ON BIXI KARMA - UPDATES
         else{
-            const ride = await Ride.create([{...req.body.ride_request, secret:generateOtp()}],{session});
+            const {admin} = await Ev.find({ev_regd:req.body.ride_request.ev_regd})
+            const ride = await Ride.create([{...req.body.ride_request, admin:admin, secret:generateOtp()}],{session});
             console.log(ride)
             await session.commitTransaction();
             res.status(201).json({

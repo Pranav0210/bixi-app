@@ -17,6 +17,7 @@ const AdminSchema = mongoose.Schema({
     },
     aadhar:{type:Number, required:true},
     aadhar_img:{type:String, required:true},
+    stations:[{lat:String, long:String, address:String}]
     // rides_approved: {type:Number},
     // rides_declined: {type:Number},
     // rides_closed: {type:Number}

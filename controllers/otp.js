@@ -125,4 +125,4 @@ function generateOTP(){
     const verificationCode = num.toString().padStart(4,"0")
     return verificationCode;
 }
-module.exports = { sendOtp, verifyOtp }
+module.exports = { sendOtp, verifyOtp, generateOTP }

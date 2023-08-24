@@ -1,12 +1,12 @@
 const express = require('express')
-const { newRide,getMyRides,cancelRide,getBookings,getAvailable,startRide,finishRide} = require('../controllers/rides')
+const { newRide,getMyRides,cancelRide,getBookings,getAvailable,startRide,finishRide, requestfinish} = require('../controllers/rides')
 const router = express.Router()
 
 router.route('/user-rides')
     .get(getMyRides)
 router.route('/book')
     .post(newRide)
-router.post('/request-end')
+router.post('/request-end',requestfinish)
 // USER ACCESS REVOKED
 // router.route('/start')
 //     .post(startRide)

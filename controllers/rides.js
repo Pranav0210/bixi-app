@@ -1,7 +1,7 @@
 const Ev = require('../models/model.ev');
 const Ride = require('../models/model.ride')
 const User = require('../models/model.user')
-const {generateOtp} = require('./otp')
+const {generateOTP} = require('./otp')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
@@ -175,8 +175,9 @@ const newRide = async (req,res)=>{
         //CREATE RIDE DOCUMENT
         //IMPLEMENT PRIORITY LOGIC BASED ON BIXI KARMA - UPDATES
         else{
-            const {admin} = await Ev.find({ev_regd:req.body.ride_request.ev_regd})
-            const ride = await Ride.create([{...req.body.ride_request, admin:admin, secret:generateOtp()}],{session});
+            const {admin} = await Ev.findOne({ev_regd:req.body.ride_request.ev_regd})
+            console.log(admin);
+            const ride = await Ride.create([{...req.body.ride_request, admin_id:admin, secret:generateOTP()}],{session});
             console.log(ride)
             await session.commitTransaction();
             res.status(201).json({
@@ -239,17 +240,18 @@ const startRide = async(req,res)=>{
 const requestfinish = async(req,res)=>{
     const {requestedEndTime, ride_id} = req.body
     const ride = await Ride.findOne({_id:ride_id}).exec();
-    if(ride.rider_id !== req.session.user_id){
+    console.log(req.session.user_id)
+    if(ride.rider_id != req.session.user_id){
         console.log(`User mismatch`)
         res.status(403).send(`Unaccessible ride. User doesn't match`)
     }
-    if(requestedEndTime < ride.req_schedule.end){
+    else if(requestedEndTime < ride.req_schedule.end){
         res.status(400).send(`Cannot end ride before booking finish`)
     }
     else{
-        if(requestedEndTime.getHours() == ride.endRequests.findLast().getHours() && 
-            requestedEndTime.getMinutes() == ride.endRequests.findLast().getMinutes())
-            res.status(400).send(`Too many requests`)
+        // if(requestedEndTime.getHours() == ride.endRequests.findLast().getHours() && 
+        //     requestedEndTime.getMinutes() == ride.endRequests.findLast().getMinutes())
+        //     res.status(400).send(`Too many requests`)
         try{
             ride.endRequests.push(requestedEndTime)
             await ride.save()

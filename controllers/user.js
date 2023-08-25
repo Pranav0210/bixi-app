@@ -3,15 +3,15 @@ const { imgUpload } = require('../util/aws-controller')
 
 const getUser = async (req,res)=>{
     // console.log(req.body.user_details)
-    if(Object.entries(req.body.user_details).length > 0){
-        const user = await User.findOne({contact : req.body.user_details.contact})
-        if(user)
-        res.status(200).send(`User Details : ${user}`)
-        else
-        res.status(404).send(`User doesn't exist.`)
-    }
-    else 
-        res.status(404).send('Query empty!')
+    const user = await User.findOne({_id : req.params.user_id})
+    if(user)
+    res.status(200).send(`User Details : ${user}`)
+    else
+    res.status(404).send(`User doesn't exist.`)
+    // if(Object.entries(req.body.user_details).length > 0){
+    // }
+    // else 
+    //     res.status(404).send('Query empty!')
 }
 const getAllUsers = async (req,res)=>{
     

@@ -9,7 +9,7 @@ const RideSchema = mongoose.Schema({
     req_schedule : {
         start : {type:Date},
         end : {type:Date}},
-    endRequests : [{type:Date}],
+    endRequest : {type:Date},
     ride_time : {
         start : {type:Date},
         end : {type:Date},

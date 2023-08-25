@@ -1,10 +1,20 @@
 const express = require('express')
 const router = express.Router()
-const {getRides,editRide,cancelRide,getRide,newRide,getBookings,addBookings, getOngoing, startRide, finishRide} = require('../controllers/rides')
 const {getUser,getAllUsers,saveUser} = require('../controllers/user')
-const {adminAuth, vehicleAuth} =  require('../middleware/authorize')
+const {adminAuth} =  require('../middleware/authorize')
 const { getEv,getAllEvs, deleteEv, saveEv } = require('../controllers/ev')
 const {createAdmin} = require('../controllers/admin')
+const {getRides,
+        editRide,
+        cancelRide,
+        getRide,
+        newRide,
+        getBookings,
+        addBookings, 
+        getOngoing, 
+        startRide, 
+        finishRide, 
+        getFinishRequests} = require('../controllers/rides')
 
 router.use(adminAuth)
 router.route('/user')
@@ -19,9 +29,9 @@ router.post('/new-admin',createAdmin)
 router.get('/all-users',getAllUsers)
 router.get('/all-ev',getAllEvs)
 router.get('/all-rides',getRides)
+router.get('/end-requests', getFinishRequests)
 
 
-// router.use(vehicleAuth)    // check if the order in the code matters and affects only the routes below or all of them
 router.route('/ev')
     .get(getEv)
     .post(saveEv)

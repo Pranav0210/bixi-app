@@ -253,7 +253,7 @@ const requestfinish = async(req,res)=>{
         //     requestedEndTime.getMinutes() == ride.endRequests.findLast().getMinutes())
         //     res.status(400).send(`Too many requests`)
         try{
-            ride.endRequests.push(requestedEndTime)
+            ride.endRequest = requestedEndTime
             await ride.save()
             res.status(200).send(`Request registered successfully`)
         }
@@ -262,6 +262,20 @@ const requestfinish = async(req,res)=>{
             res.status(500).send(`Failed to request ride termination`)
         }
     }
+}
+const getFinishRequests = async(req,res)=>{
+    try{
+        const finishRequestList = await Ride.find({endRequest : {$ne : null}, admin_id : req.session.user_id})
+        res.status(200).send({
+            data: finishRequestList,
+            msg : `Successfully received requests for ride termination.`
+        })
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).send(`Failed to fetch end requests`)
+    }
+
 }
 const finishRide = async(req,res)=>{
     const session = mongoose.startSession();
@@ -354,4 +368,6 @@ module.exports = {
     getAvailable, 
     startRide, 
     finishRide,
-    requestfinish }
+    requestfinish,
+    getFinishRequests
+}

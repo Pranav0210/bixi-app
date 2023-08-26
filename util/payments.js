@@ -8,7 +8,7 @@ const createCoupon = async(req,res)=>{
 }
 const createBill = async(ride,ev,contact)=>{
     const {
-        ride_id, 
+        _id, 
         ev_regd,  
         rider_id, 
         ride_time,
@@ -16,6 +16,7 @@ const createBill = async(ride,ev,contact)=>{
         distance,
         req_schedule,
     } = ride
+    // consol.log(ride)
     // const {
     //     delay_rate,
     //     helm_rate,
@@ -34,7 +35,7 @@ const createBill = async(ride,ev,contact)=>{
     const total_fare = base_fare+rent+penalty.damage+penalty.delay;
 
     const bill = new Billing({
-        ride_id : ride_id,
+        ride_id : _id,
         ev_regd : ev_regd,
         rider_id : rider_id,
         rider_contact: contact,

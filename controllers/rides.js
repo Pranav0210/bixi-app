@@ -2,6 +2,7 @@ const Ev = require('../models/model.ev');
 const Ride = require('../models/model.ride')
 const User = require('../models/model.user')
 const {generateOTP} = require('./otp')
+const {createBill} = require('../util/payments')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
@@ -278,19 +279,34 @@ const getFinishRequests = async(req,res)=>{
 
 }
 const finishRide = async(req,res)=>{
-    const session = mongoose.startSession();
+    const session = await mongoose.startSession();
     await session.startTransaction();
-    const {end_time, kms, ride_id, ev_regd, duration} = req.body.ride;
+    const {start_time, end_time, kms, ride_id, ev_regd, duration} = req.body.ride;
     try{
+        // const transactionOptions = {
+        //     readPreference: 'primary',
+        //     readConcern: { level: 'local' },
+        //     writeConcern: { w: 'majority' }
+        //   };
+        // session.withTransaction(async()=>{
+            
+        // },transactionOptions)
+        //calculate fare and send bill for the ride
         const finishedRide = await Ride.findOneAndUpdate({_id:ride_id, },
-            {
-                status :'completed',
-                ride_time : {
-                    end : end_time,
-                    duration : duration
-                },
-                distance : kms
-            },{session})
+            { $set:{
+                    status :'completed',
+                    ride_time : {
+                        start: start_time,
+                        end : end_time,
+                        duration : duration
+                    },
+                    distance : kms
+                }
+            }
+            // ,{session}
+            )
+            // await session.commitTransaction()
+            console.log(`Ride modified`)
         //modify total_rides total_hrs total_kms last_ride and status of ev
         const this_ev = await Ev.findOneAndUpdate({ev_regd:ev_regd},{
             $set : {
@@ -298,13 +314,17 @@ const finishRide = async(req,res)=>{
             },
             $inc:{
                 total_rides : 1,
-                total_hrs : (end_time - finishedRide.ride_time.start),
+                // total_hrs : (new Date(end_time) - new Date(finishedRide.ride_time.start))/36000,
                 total_kms : kms,
             }
             // this_ev.last_ride = this_ev.this_ride,
             // this_ev.this_ride = null,
 
-        },{session})
+        }
+        // ,{session}
+        )
+        // await session.commitTransaction()
+        console.log(`Ev modified`)
         //modify total_rides count in user
         const rider = await User.findOneAndUpdate({_id : finishedRide.rider_id},{
             $inc : {
@@ -313,20 +333,22 @@ const finishRide = async(req,res)=>{
             $set : {
                 last_ride : ride_id
             }
-        },{session})
+        }
+        // ,{session}
+        )
         //modify user bixi karma -  LATER upgrade
-        
-        //calculate fare and send bill for the ride
-        const bill = await generateBilling(finishedRide, this_ev.model, rider.contact)
+        console.log(`Rider modified`)
+        const bill = await createBill(finishedRide, this_ev.model, rider.contact)
         //console.log(`ride finished : ${finishedRide.acknowledged}`)
-        await session.commitTransaction()
+        // await session.commitTransaction()
         res.status(200).json({
             msg: `Ride status : finished`,
             bill: bill 
         })
     }
     catch(err){
-        (await session).abortTransaction();
+        // (await session).abortTransaction();
+        console.log(`ERR : ${err}`)
         console.log(`Transaction failed : aborting changes`)
         res.status(500).send(`Couldn't finish ride : ride not terminated`)
     }

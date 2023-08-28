@@ -30,7 +30,7 @@ const createBill = async(ride,ev,contact)=>{
     var rent = helmet*helm_rate
     const penalty = {
         damage : damage_rate,
-        delay : delay_rate*(req_schedule.end < ride_time.end ? req_schedule.end - ride_time.end : 0 )
+        delay : delay_rate*(req_schedule.end < ride_time.end ? req_schedule.end - ride_time.end : 0 )/3600000
     }
     const total_fare = base_fare+rent+penalty.damage+penalty.delay;
 

@@ -41,6 +41,22 @@ const getOngoing = async(req,res)=> {
     }
 }
 
+const getRecentUserBooking = async(req,res)=>{
+    try{
+        console.log(req.session.user_id)
+        const rideExist = await Ride.exists({status:{$in:["booked", "ongoing"]},rider_id:req.session.user_id}).exec()
+        if(rideExist){
+            const bookings = await Ride.findONe({_id:rideExist}).exec();
+            res.status(200).send(bookings)
+        }
+        else{
+            res.status.send('Booking not found')
+        }
+    }
+    catch{
+        res.status(404).send(`Booking not found`)
+    }
+}
 const getMyBooking = async(req,res)=>{
     try{
         const booking = await Ride.findOne({status:"booked"});
@@ -278,84 +294,157 @@ const getFinishRequests = async(req,res)=>{
     }
 
 }
-const finishRide = async(req,res)=>{
-    const session = await mongoose.startSession();
-    await session.startTransaction();
-    const {start_time, end_time, kms, ride_id, ev_regd, duration} = req.body.ride;
-    try{
-        // const transactionOptions = {
-        //     readPreference: 'primary',
-        //     readConcern: { level: 'local' },
-        //     writeConcern: { w: 'majority' }
-        //   };
-        // session.withTransaction(async()=>{
+// const finishRide = async(req,res)=>{
+//     // await session.startTransaction();
+//     const {start_time, end_time, kms, ride_id, ev_regd, duration} = req.body.ride;
+//     const transactionOptions = {
+//         readPreference: 'primary',
+//         readConcern: { level: 'local' },
+//         writeConcern: { w: 'majority' }
+//       };
+//     const session = await mongoose.startSession();
+//     try{
+//         session.withTransaction(async()=>{
+//             const finishedRide = await Ride.findOneAndUpdate({_id:ride_id, },
+//                 { $set:{
+//                         status :'completed',
+//                         ride_time : {
+//                             start: start_time,
+//                             end : end_time,
+//                             duration : duration
+//                         },
+//                         distance : kms
+//                     }
+//                 }
+//                 ,{session}
+//                 )
+//                 // await session.commitTransaction()
+//                 console.log(`Ride modified`)
+//             //modify total_rides total_hrs total_kms last_ride and status of ev
+//             const this_ev = await Ev.findOneAndUpdate({ev_regd:ev_regd},{
+//                 $set : {
+//                     status : 'idle',
+//                 },
+//                 $inc:{
+//                     total_rides : 1,
+//                     // total_hrs : (new Date(end_time) - new Date(finishedRide.ride_time.start))/36000,
+//                     total_kms : kms,
+//                 }
+//                 // this_ev.last_ride = this_ev.this_ride,
+//                 // this_ev.this_ride = null,
+    
+//             }
+//             ,{session}
+//             )
+//             // await session.commitTransaction()
+//             console.log(`Ev modified`)
+//             //modify total_rides count in user
+//             //modify user bixi karma -  LATER upgrade
+//             const rider = await User.findOneAndUpdate({_id : finishedRide.rider_id},{
+//                 $inc : {
+//                     total_rides : 1
+//                 },
+//                 $set : {
+//                     last_ride : ride_id
+//                 }
+//             }
+//             ,{session}
+//             )
+//             //calculate fare and send bill for the ride
+//             console.log(`Rider modified`)
             
-        // },transactionOptions)
-        //calculate fare and send bill for the ride
-        const finishedRide = await Ride.findOneAndUpdate({_id:ride_id, },
-            { $set:{
-                    status :'completed',
-                    ride_time : {
-                        start: start_time,
-                        end : end_time,
-                        duration : duration
-                    },
-                    distance : kms
-                }
-            }
-            // ,{session}
-            )
-            // await session.commitTransaction()
-            console.log(`Ride modified`)
-        //modify total_rides total_hrs total_kms last_ride and status of ev
-        const this_ev = await Ev.findOneAndUpdate({ev_regd:ev_regd},{
-            $set : {
-                status : 'idle',
-            },
-            $inc:{
-                total_rides : 1,
-                // total_hrs : (new Date(end_time) - new Date(finishedRide.ride_time.start))/36000,
-                total_kms : kms,
-            }
-            // this_ev.last_ride = this_ev.this_ride,
-            // this_ev.this_ride = null,
+//             const bill = await createBill(finishedRide, this_ev.model, rider.contact)
+//             res.status(200).json({
+//                 msg: `Ride status : finished`,
+//                 bill: bill 
+//             })
+//         },transactionOptions)
+//         //console.log(`ride finished : ${finishedRide.acknowledged}`)
+//         // await session.commitTransaction()
+//     }
+//     catch(err){
+//         // (await session).abortTransaction();
+//         console.log(`ERR : ${err}`)
+//         console.log(`Transaction failed : aborting changes`)
+//         res.status(500).send(`Couldn't finish ride : ride not terminated`)
+//     }
+//     finally{
+//         (await session).endSession();
+//     }
+// }
+const finishRide = async (req, res) => {
+    const session = await mongoose.startSession();
 
-        }
-        // ,{session}
-        )
-        // await session.commitTransaction()
-        console.log(`Ev modified`)
-        //modify total_rides count in user
-        const rider = await User.findOneAndUpdate({_id : finishedRide.rider_id},{
-            $inc : {
-                total_rides : 1
-            },
-            $set : {
-                last_ride : ride_id
-            }
-        }
-        // ,{session}
-        )
-        //modify user bixi karma -  LATER upgrade
-        console.log(`Rider modified`)
-        const bill = await createBill(finishedRide, this_ev.model, rider.contact)
-        //console.log(`ride finished : ${finishedRide.acknowledged}`)
-        // await session.commitTransaction()
-        res.status(200).json({
-            msg: `Ride status : finished`,
-            bill: bill 
-        })
+    try {
+        await session.withTransaction(async () => {
+            const { start_time, end_time, kms, ride_id, ev_regd, duration } = req.body.ride;
+
+            // calculate fare and send bill for the ride
+            const finishedRide = await Ride.findOneAndUpdate(
+                { _id: ride_id },
+                {
+                    $set: {
+                        status: 'completed',
+                        ride_time: {
+                            start: start_time,
+                            end: end_time,
+                            duration: duration
+                        },
+                        distance: kms
+                    }
+                },
+                { returnDocument:'after', session:session }
+            );
+            console.log(`Ride modified\n ${finishedRide}`);
+
+            // modify total_rides total_hrs total_kms last_ride and status of ev
+            const this_ev = await Ev.findOneAndUpdate(
+                { ev_regd: ev_regd },
+                {
+                    $set: {
+                        status: 'idle',
+                    },
+                    $inc: {
+                        total_rides: 1,
+                        total_kms: kms,
+                    }
+                },
+                { returnDocument:'after', session:session }
+            );
+            console.log(`Ev modified\n ${this_ev}`);
+
+            // modify total_rides count in user
+            const rider = await User.findOneAndUpdate(
+                { _id: finishedRide.rider_id },
+                {
+                    $inc: {
+                        total_rides: 1
+                    },
+                    $set: {
+                        last_ride: ride_id
+                    }
+                },
+                { returnDocument:'after', session:session }
+            );
+            console.log(`Rider modified\n ${rider}`);
+
+            const bill = await createBill(finishedRide, this_ev.model, rider.contact);
+            // console.log(`ride finished : ${finishedRide.acknowledged}`);
+
+            res.status(200).json({
+                msg: `Ride status : finished`,
+                bill: bill
+            });
+        });
+    } catch (err) {
+        console.log(`ERR : ${err}`);
+        console.log(`Transaction failed : aborting changes`);
+        res.status(500).send(`Couldn't finish ride: ride not terminated`);
+    } finally {
+        session.endSession();
     }
-    catch(err){
-        // (await session).abortTransaction();
-        console.log(`ERR : ${err}`)
-        console.log(`Transaction failed : aborting changes`)
-        res.status(500).send(`Couldn't finish ride : ride not terminated`)
-    }
-    finally{
-        (await session).endSession();
-    }
-}
+};
+
 const cancelRide = async(req,res)=>{
     try{
         const cancel_ride = await Ride.findOneAndUpdate({_id: req.body.ride_id},{status : 'cancelled'},{new:true})
@@ -385,7 +474,8 @@ module.exports = {
     editRide,
     getOngoing,
     getMyBooking, 
-    getBookings, 
+    getBookings,
+    getRecentUserBooking, 
     addBookings, 
     getAvailable, 
     startRide, 

@@ -1,5 +1,6 @@
 const Ev = require('../models/model.ev');
 const Ride = require('../models/model.ride')
+const Billing = require('../models/model.billing')
 const User = require('../models/model.user')
 const {generateOTP} = require('./otp')
 const {createBill} = require('../util/payments')
@@ -22,7 +23,7 @@ const getRides = async(req,res)=>{
 }
 const getBookings = async(req,res)=>{
     try{
-        const bookings = await Ride.find({status:"booked",admin:req.session.user_id}).exec();
+        const bookings = await Ride.find({status:"booked",admin_id:req.session.user_id}).exec();
         res.status(200).send(bookings)
     }
     catch{
@@ -44,13 +45,13 @@ const getOngoing = async(req,res)=> {
 const getRecentUserBooking = async(req,res)=>{
     try{
         console.log(req.session.user_id)
-        const rideExist = await Ride.exists({status:{$in:["booked", "ongoing"]},rider_id:req.session.user_id}).exec()
+        const rideExist = await Ride.exists({status:{$in:["booked", "ongoing","completed"]},"payment.no_balance":false, rider_id:req.session.user_id}).exec()
         if(rideExist){
-            const bookings = await Ride.findONe({_id:rideExist}).exec();
+            const bookings = await Ride.findOne({_id:rideExist}).exec();
             res.status(200).send(bookings)
         }
         else{
-            res.status.send('Booking not found')
+            res.status(404).send('Booking not found')
         }
     }
     catch{
@@ -465,6 +466,36 @@ const editRide = async()=>{
     res.status(200).send(`Ride modified successfully!`)
 }
 
+
+const getBill=async(req,res)=>{
+
+    const {ride_id} = req.body
+    try{
+        
+        const bill = await Billing.findOne({ride_id: ride_id}).exec();
+        res.status(200).send(bill)
+    }
+    catch{
+        console.log(console.error)
+        res.status(404).send(`Bill not found`)
+    }
+}
+
+const updateTxns=async(req,res)=>{
+
+    const {ride_id} = req.body
+    try{
+        
+        const rideTxns = await Ride.findOneAndUpdate({_id: ride_id},{$set:{"payment.no_balance":true}}).exec();
+        res.status(200).send(rideTxns)
+    }
+    catch{
+        console.log(console.error)
+        res.status(404).send(`Failed to complete Transaction`)
+    }
+}
+
+
 module.exports = { 
     getMyRides, 
     getRide, 
@@ -481,5 +512,7 @@ module.exports = {
     startRide, 
     finishRide,
     requestfinish,
-    getFinishRequests
+    getFinishRequests,
+    getBill,
+    updateTxns
 }

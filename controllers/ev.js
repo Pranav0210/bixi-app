@@ -50,6 +50,7 @@ const saveEv = async(req,res)=>{
     // catch(err){
     //     res.send(`error: ${err}`)
     // }
+    // console.log(req.files[0].path)
     const options = {upsert:true,setDefaultsOnInsert:true,new:true}
         if(!req.body.update_fields && !req.files){
             res.send('No data. Update failed.')
@@ -59,13 +60,17 @@ const saveEv = async(req,res)=>{
             console.log(`Ev updated successfully:${result}`)
         })
         if(req.files &&  req.files.length > 0){
-            var imgUrls = []
-            req.files.forEach(async(img,index) => {
-                const imgPath = img.path
-                const blob = fs.readFileSync(imgPath)
-                imgUrls[index] = await imgUpload(blob) 
-            })
-            await Ev.findOneAndUpdate(req.body.query_field,{ image : imgUrls[0]}, options )
+            // const {image} = req.files
+            // console.log(req.files[0])
+            // const imgPath = req.files.image.tempFilePath
+            // const blob = fs.readFileSync(req.files.image.data)
+            // console.log(blob);
+            const imagePath = req.files[0].path
+            const blob = fs.readFileSync(imagePath)
+            const imgUrl = await imgUpload(blob) 
+            // req.files.forEach(async(img,index) => {
+            // })
+            await Ev.findOneAndUpdate(req.body.query_field,{ image : imgUrl}, options )
             .then((result)=>{
                 console.log(`Ev image updated successfully: ${result}`)
             })

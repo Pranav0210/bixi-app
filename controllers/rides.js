@@ -283,7 +283,7 @@ const requestfinish = async(req,res)=>{
 }
 const getFinishRequests = async(req,res)=>{
     try{
-        const finishRequestList = await Ride.find({endRequest : {$ne : null}, admin_id : req.session.user_id})
+        const finishRequestList = await Ride.find({endRequest : {$ne : null}, status: "ongoing", admin_id : req.session.user_id})
         res.status(200).send({
             data: finishRequestList,
             msg : `Successfully received requests for ride termination.`

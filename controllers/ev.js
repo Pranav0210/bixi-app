@@ -1,5 +1,5 @@
 const Ev = require('../models/model.ev')
-const { imgUpload } = require('../util/aws-controller')
+const { imgUpload } = require('./aws/aws-controller')
 
 const getEv = async (req,res)=>{
     // console.log(req.body.user_details)

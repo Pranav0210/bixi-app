@@ -1,5 +1,18 @@
 const express = require('express')
-const { newRide,getMyRides,cancelRide,getBookings,getAvailable,startRide,finishRide, requestfinish, getRecentUserBooking, getBill, updateTxns} = require('../controllers/rides')
+const { 
+    newRide,
+    getMyRides,
+    cancelRide,
+    getBookings,
+    getAvailable,
+    startRide,
+    finishRide, 
+    requestfinish, 
+    getRecentUserBooking, 
+    getBill, 
+    updateTxns, 
+    getAllStations} = require('../controllers/rides')
+    
 const router = express.Router()
 
 router.route('/user-rides')
@@ -19,5 +32,6 @@ router.route('/cancel')
     .patch(cancelRide)
 router.route('/available')
     .post(getAvailable)
+router.get('/stations', getAllStations)
 
 module.exports = router

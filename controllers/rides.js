@@ -2,6 +2,7 @@ const Ev = require('../models/model.ev');
 const Ride = require('../models/model.ride')
 const Billing = require('../models/model.billing')
 const User = require('../models/model.user')
+const Admin = require('../models/model.admin')
 const {generateOTP} = require('./otp')
 const {createBill} = require('../util/payments')
 const mongoose = require('mongoose')
@@ -445,6 +446,19 @@ const finishRide = async (req, res) => {
         session.endSession();
     }
 };
+const getAllStations = async(req,res)=>{
+    try{
+        const stationsList = await Admin.distinct("stations").exec();
+        res.status(200).json({
+            'data' : stationsList,
+            'item-count' : stationsList.length
+        })
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).send('Internal Server Error')
+    }
+}
 
 const cancelRide = async(req,res)=>{
     try{
@@ -506,6 +520,7 @@ module.exports = {
     getOngoing,
     getMyBooking, 
     getBookings,
+    getAllStations,
     getRecentUserBooking, 
     addBookings, 
     getAvailable, 

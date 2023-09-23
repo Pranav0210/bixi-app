@@ -9,6 +9,7 @@ const evRouter = require('./routes/route.ev')
 const authRouter = require('./routes/route.auth')
 const ridesRouter = require('./routes/route.rides')
 const adminRouter = require('./routes/route.admin')
+const uploadRouter = require('./routes/route.upload')
 const dbConnect = require('./db');
 const fileUpload = require("express-fileupload");
 // const session = require('expres-session')
@@ -36,6 +37,7 @@ app.use('/api/logout', (req,res)=>{
 })
 app.use('/api/rides', ridesRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/upload', uploadRouter)
 
 const PORT = process.env.PORT;
 

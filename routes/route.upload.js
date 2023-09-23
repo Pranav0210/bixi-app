@@ -1,4 +1,4 @@
-const uploadFile = require("../controllers/upload-controller");
+const {uploadFile} = require("../controllers/aws/upload-controller");
 const express = require("express");
 const router = express.Router();
 

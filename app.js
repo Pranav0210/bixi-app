@@ -11,14 +11,14 @@ const ridesRouter = require('./routes/route.rides')
 const adminRouter = require('./routes/route.admin')
 const uploadRouter = require('./routes/route.upload')
 const dbConnect = require('./db');
-const fileUpload = require("express-fileupload");
+// const fileUpload = require("express-fileupload");
 // const session = require('expres-session')
 const app = express()
 
 app.use(cors())
 app.use(helmet())
 app.use(express.json());
-app.use(fileUpload());
+// app.use(fileUpload());
 // app.disable('x-powered-by')
 
 app.use(cookieSession({

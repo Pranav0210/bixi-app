@@ -3,7 +3,7 @@ const { imgUpload } = require('./aws/aws-controller')
 
 const getUser = async (req,res)=>{
     // console.log(req.body.user_details)
-    const user = await User.findOne({_id : req.params.user_id})
+    const user = await User.findOne({_id : req.session.user_id})
     if(user)
     res.status(200).send(`User Details : ${user}`)
     else

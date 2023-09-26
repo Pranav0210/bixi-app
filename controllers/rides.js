@@ -98,10 +98,10 @@ const getRide = async(req,res)=>{
 }
 
 const getAvailable = async (req,res)=>{
-    const {ride_start, ride_end, range} = req.body.ride_request
+    const {ride_start, ride_end, range, station} = req.body.ride_request
     // const startTime = new Date(ride_start)
     const rangeEvList = await Ev.aggregate([
-        { $match: { range: { $gte: range } } },
+        { $match: { range: { $gte: range }, station : { $eq: station }}},
         {$sort: {range:1, total_rides:1}},
         // {$project: {ev_regd}}
     ]).project("ev_regd -_id  top_speed range").exec()
@@ -459,6 +459,19 @@ const getAllStations = async(req,res)=>{
         res.status(500).send('Internal Server Error')
     }
 }
+const getAdminByStation = async(req,res)=>{
+    try{
+        const adminData = await Admin.find({"stations.address" : req.body.station_address}).exec();
+        res.status(200).json({
+            'data' : adminData[0],
+            'exisis' : adminData.length > 0 ? true : false
+        })
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).send('Internal Server Error')
+    }
+}
 
 const cancelRide = async(req,res)=>{
     try{
@@ -521,6 +534,7 @@ module.exports = {
     getMyBooking, 
     getBookings,
     getAllStations,
+    getAdminByStation,
     getRecentUserBooking, 
     addBookings, 
     getAvailable, 

@@ -11,7 +11,8 @@ const {
     getRecentUserBooking, 
     getBill, 
     updateTxns, 
-    getAllStations} = require('../controllers/rides')
+    getAllStations,
+    getAdminByStation} = require('../controllers/rides')
     
 const router = express.Router()
 
@@ -33,5 +34,6 @@ router.route('/cancel')
 router.route('/available')
     .post(getAvailable)
 router.get('/stations', getAllStations)
+router.post('/admin-by-station', getAdminByStation)
 
 module.exports = router

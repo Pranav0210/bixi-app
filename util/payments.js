@@ -6,6 +6,17 @@ const Price = require('../models/model.price')
 const createCoupon = async(req,res)=>{
 
 }
+
+const getRates = async()=>{
+    //check available offers
+    return {
+        fare_rate : 1,
+        fixed_adv : 60,
+        helm_rate : 5,
+        damage_rate : 0,
+        delay_rate : 1.5
+    }
+}
 const createBill = async(ride,ev,contact)=>{
     const {
         _id, 
@@ -32,7 +43,7 @@ const createBill = async(ride,ev,contact)=>{
         damage : damage_rate,
         delay : delay_rate*(req_schedule.end < ride_time.end ? req_schedule.end - ride_time.end : 0 )/3600000
     }
-    const total_fare = base_fare+rent+penalty.damage+penalty.delay;
+    const total_fare = Math.max(fixed_adv, base_fare+rent)+penalty.damage+penalty.delay;
 
     const bill = new Billing({
         ride_id : _id,

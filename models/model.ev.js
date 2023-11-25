@@ -25,7 +25,8 @@ const EvSchema = mongoose.Schema({
         },
         default: 'idle',
         required: true
-    }
+    },
+   station:{lat:String, long:String, address:String}
 },
 {timestamp:true});
 

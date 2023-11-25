@@ -35,7 +35,8 @@ const saveUser = async(req,res)=>{
         const options = {upsert:true,setDefaultsOnInsert:true,new:true}
         await User.findOneAndUpdate(req.body.query_field,req.body.update_fields, options)
         .then((result)=>{
-            console.log(`User updated successfully:${result}`)
+                req.session.user_id = result._id;
+		console.log(`User updated successfully:${result}`)
         })
         if(req.files &&  req.files.length > 0){
             var imgUrls = []

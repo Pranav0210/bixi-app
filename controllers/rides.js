@@ -31,7 +31,15 @@ const getBookings = async(req,res)=>{
         res.status(404).send(`Request failed.`)
     }
 }
-
+const getPastBookings = async(req,res)=>{
+    try{
+        const bookings = await Ride.find({status:"completed",rider_id:req.session.user_id,"payment.no_balance":true}).exec();
+        res.status(200).send(bookings)
+    }
+    catch{
+        res.status(404).send(`Request failed.`)
+    }
+}
 const getOngoing = async(req,res)=> {
     try{
         const ongoing = await Ride.find({status:"ongoing"}).exec();
@@ -459,6 +467,16 @@ const getAllStations = async(req,res)=>{
         res.status(500).send('Internal Server Error')
     }
 }
+const getAdmin = async(req,res)=>{
+    try{
+        const adminData = await Admin.find({"_id" : req.session.user_id}).exec();
+        res.status(200).json({adminData})
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).send('Internal Server Error')
+    }
+}
 const getAdminByStation = async(req,res)=>{
     try{
         const adminData = await Admin.find({"stations.address" : req.body.station_address}).exec();
@@ -535,11 +553,13 @@ module.exports = {
     getBookings,
     getAllStations,
     getAdminByStation,
+    getAdmin,	
     getRecentUserBooking, 
     addBookings, 
     getAvailable, 
     startRide, 
     finishRide,
+    getPastBookings,	
     requestfinish,
     getFinishRequests,
     getBill,

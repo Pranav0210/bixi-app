@@ -8,14 +8,16 @@ const {
     startRide,
     finishRide, 
     requestfinish, 
+    getPastBookings,	
     getRecentUserBooking, 
     getBill, 
     updateTxns, 
     getAllStations,
+    getAdmin,	
     getAdminByStation} = require('../controllers/rides')
     
 const router = express.Router()
-
+router.get('/get-past-bookings',getPastBookings)
 router.route('/user-rides')
     .get(getMyRides)
 router.route('/book')
@@ -34,6 +36,7 @@ router.route('/cancel')
 router.route('/available')
     .post(getAvailable)
 router.get('/stations', getAllStations)
+router.get('/admin', getAdmin)
 router.post('/admin-by-station', getAdminByStation)
 
 module.exports = router

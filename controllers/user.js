@@ -2,12 +2,17 @@ const User = require('../models/model.user')
 const { imgUpload } = require('./aws/aws-controller')
 
 const getUser = async (req,res)=>{
-    // console.log(req.body.user_details)
-    const user = await User.findOne({_id : req.session.user_id})
-    if(user)
-    res.status(200).json(user)
-    else
-    res.status(404).send(`User doesn't exist.`)
+    // console.log(req.session)
+    try{
+        const user = await User.findOne({_id : req.session.user_id})
+        if(user)
+        res.status(200).json(user)
+        else
+        res.status(404).send(`User doesn't exist.`)
+    }
+    catch(e){
+        console.log(e);
+    }
     // if(Object.entries(req.body.user_details).length > 0){
     // }
     // else 
@@ -36,7 +41,7 @@ const saveUser = async(req,res)=>{
         await User.findOneAndUpdate(req.body.query_field,req.body.update_fields, options)
         .then((result)=>{
                 req.session.user_id = result._id;
-		console.log(`User updated successfully:${result}`)
+		        console.log(`User updated successfully:${result}`)
         })
         if(req.files &&  req.files.length > 0){
             var imgUrls = []

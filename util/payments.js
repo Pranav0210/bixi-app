@@ -36,12 +36,12 @@ const createBill = async(ride,ev,contact)=>{
     //     fixed_adv,
 
     // } = await Price.findOne().exec();
-    const fare_rate = 1,fixed_adv = 60, helm_rate = 5, damage_rate = 0, delay_rate = 0.2
+    const fare_rate = 1,fixed_adv = 60, helm_rate = 5/60, damage_rate = 0, delay_rate = 0.2
     var base_fare = fare_rate*ride_time.duration
     if(helmet > 2 || helmet < 0){
         res.status(400).send(`Invalid helmet count`)
     }
-    var rent = helmet*helm_rate*Math.ceil(ride_time.duration/60)
+    var rent = Math.round(ride_time.duration*helmet*helm_rate)
     const penalty = {
         damage : damage_rate,
         delay : delay_rate*(req_schedule.end < ride_time.end ? ride_time.end - req_schedule.end : 0 )/60000

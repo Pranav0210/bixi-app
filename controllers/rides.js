@@ -109,7 +109,7 @@ const getAvailable = async (req,res)=>{
     const {ride_start, ride_end, range, station} = req.body.ride_request
     // const startTime = new Date(ride_start)
     const rangeEvList = await Ev.aggregate([
-        { $match: { range: { $gte: range }, station : { $eq: station }}},
+        { $match: { range: { $gte: range }, station : { $eq: station }, status : { $in: ["idle","running"] } }},
         {$sort: {range:1, total_rides:1}},
         // {$project: {ev_regd}}
     ]).project("ev_regd -_id  top_speed range type").exec()

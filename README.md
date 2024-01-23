@@ -1,8 +1,6 @@
 # Bixi-app
 REST API for a real-time rental electronic vehicle booking mobile application.
 
-#### ! Please see that certain test files and their contents have been redacted in view of keeping crucial test insights protected. However the folder in structure persists to show their management. 
-
 ## Manual Installation
 
 Install the dependencies:
